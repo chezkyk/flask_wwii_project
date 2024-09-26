@@ -11,19 +11,15 @@ WHERE EXTRACT(YEAR FROM mission_date) = 1945
 GROUP BY air_force
 ORDER BY active_missions DESC;
 
--- explanation
--- Sort  (cost=10270.76..10270.80 rows=16 width=13)
+-- Sort  (cost=10.04..10.04 rows=1 width=226)
 --   Sort Key: (count(*)) DESC
---   ->  Finalize GroupAggregate  (cost=10261.09..10270.44 rows=16 width=13)
+--   ->  GroupAggregate  (cost=10.01..10.03 rows=1 width=226)
 --         Group Key: air_force
---         ->  Gather Merge  (cost=10261.09..10270.12 rows=32 width=13)
---               Workers Planned: 2
---               ->  Partial GroupAggregate  (cost=9261.06..9266.41 rows=16 width=13)
---                     Group Key: air_force
---                     ->  Sort  (cost=9261.06..9262.79 rows=691 width=5)
---                           Sort Key: air_force
---                           ->  Parallel Seq Scan on mission  (cost=0.00..9228.48 rows=691 width=5)
---                                 Filter: (EXTRACT(year FROM mission_date) = '1945'::numeric)
+--         ->  Sort  (cost=10.01..10.02 rows=1 width=218)
+--               Sort Key: air_force
+--               ->  Seq Scan on mission2  (cost=0.00..10.00 rows=1 width=218)
+--                     Filter: (EXTRACT(year FROM mission_date) = '1945'::numeric)
+
 
 EXPLAIN ANALYZE
 SELECT air_force, COUNT(*) AS active_missions
@@ -32,24 +28,33 @@ WHERE EXTRACT(YEAR FROM mission_date) = 1945
 GROUP BY air_force
 ORDER BY active_missions DESC;
 
--- explanation with analyze
--- Sort  (cost=10997.70..10997.74 rows=16 width=13) (actual time=78.696..78.779 rows=14 loops=1)
+-- Sort  (cost=10.04..10.04 rows=1 width=226) (actual time=0.026..0.026 rows=0 loops=1)
 --   Sort Key: (count(*)) DESC
 --   Sort Method: quicksort  Memory: 25kB
---   ->  Finalize GroupAggregate  (cost=10987.61..10997.38 rows=16 width=13) (actual time=72.374..78.748 rows=14 loops=1)
+--   ->  GroupAggregate  (cost=10.01..10.03 rows=1 width=226) (actual time=0.017..0.018 rows=0 loops=1)
 --         Group Key: air_force
---         ->  Gather Merge  (cost=10987.61..10997.06 rows=32 width=13) (actual time=72.358..78.716 rows=42 loops=1)
---               Workers Planned: 2
---               Workers Launched: 2
---               ->  Partial GroupAggregate  (cost=9987.59..9993.34 rows=16 width=13) (actual time=31.810..34.482 rows=14 loops=3)
---                     Group Key: air_force
---                     ->  Sort  (cost=9987.59..9989.45 rows=745 width=5) (actual time=31.682..32.639 rows=17136 loops=3)
---                           Sort Key: air_force
---                           Sort Method: quicksort  Memory: 1022kB
---                           Worker 0:  Sort Method: quicksort  Memory: 509kB
---                           Worker 1:  Sort Method: quicksort  Memory: 545kB
---                           ->  Parallel Seq Scan on mission  (cost=0.00..9952.05 rows=745 width=5) (actual time=0.323..27.233 rows=17136 loops=3)
---                                 Filter: (EXTRACT(year FROM mission_date) = '1945'::numeric)
---                                 Rows Removed by Filter: 42291
--- Planning Time: 0.781 ms
--- Execution Time: 79.027 ms
+--         ->  Sort  (cost=10.01..10.02 rows=1 width=218) (actual time=0.017..0.017 rows=0 loops=1)
+--               Sort Key: air_force
+--               Sort Method: quicksort  Memory: 25kB
+--               ->  Seq Scan on mission2  (cost=0.00..10.00 rows=1 width=218) (actual time=0.010..0.010 rows=0 loops=1)
+--                     Filter: (EXTRACT(year FROM mission_date) = '1945'::numeric)
+-- Planning Time: 0.160 ms
+-- Execution Time: 0.050 ms
+
+
+CREATE INDEX idx_mission_date_year ON mission (EXTRACT(YEAR FROM mission_date));
+
+-- Sort  (cost=8.18..8.19 rows=1 width=226) (actual time=0.012..0.012 rows=0 loops=1)
+--   Sort Key: (count(*)) DESC
+--   Sort Method: quicksort  Memory: 25kB
+--   ->  GroupAggregate  (cost=8.15..8.17 rows=1 width=226) (actual time=0.010..0.010 rows=0 loops=1)
+--         Group Key: air_force
+--         ->  Sort  (cost=8.15..8.16 rows=1 width=218) (actual time=0.009..0.009 rows=0 loops=1)
+--               Sort Key: air_force
+--               Sort Method: quicksort  Memory: 25kB
+--               ->  Index Scan using iidx_mission_date_year on mission2  (cost=0.12..8.14 rows=1 width=218) (actual time=0.006..0.006 rows=0 loops=1)
+--                     Index Cond: (EXTRACT(year FROM mission_date) = '1945'::numeric)
+-- Planning Time: 1.101 ms
+-- Execution Time: 0.031 ms
+
+--מסקנה לא שווה לעשות אינדקס כי עם אינדקס זה לוקח יותר זמן
