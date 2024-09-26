@@ -105,6 +105,7 @@ def normalize_db():
                 target_longitude NUMERIC(10, 6)
             )
         """)
+
         print("8")
         # target_conn.commit()
         target_cur.execute("""
