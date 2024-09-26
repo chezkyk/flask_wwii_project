@@ -38,20 +38,20 @@ def normalize_db():
             )
         """)
         print("1")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             INSERT INTO targets (target_id, target_country, target_city, target_type, target_industry, target_priority, target_latitude, target_longitude)
             SELECT DISTINCT target_id, target_country, target_city, target_type, target_industry, target_priority, target_latitude, target_longitude
             FROM mission
         """)
         print("2")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS mission
             ADD COLUMN IF NOT EXISTS target_key INTEGER REFERENCES targets(target_key)
         """)
         print("3")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             UPDATE mission
             SET target_key = (
@@ -69,7 +69,7 @@ def normalize_db():
             )
         """)
         print("4")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS mission
             DROP COLUMN IF EXISTS target_country,
@@ -81,7 +81,7 @@ def normalize_db():
             DROP COLUMN IF EXISTS target_longitude
         """)
         print("5")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             CREATE TABLE IF NOT EXISTS countries (
                 country_id SERIAL PRIMARY KEY,
@@ -89,13 +89,13 @@ def normalize_db():
             )
         """)
         print("6")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             INSERT INTO countries (country_name)
             SELECT DISTINCT target_country FROM targets
         """)
         print("7")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             CREATE TABLE IF NOT EXISTS locations (
                 location_id SERIAL PRIMARY KEY,
@@ -106,7 +106,7 @@ def normalize_db():
             )
         """)
         print("8")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             INSERT INTO locations (country_id, target_city, target_latitude, target_longitude)
             SELECT DISTINCT countries.country_id, targets.target_city, targets.target_latitude, targets.target_longitude
@@ -114,13 +114,13 @@ def normalize_db():
             JOIN countries ON targets.target_country = countries.country_name
         """)
         print("9")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(location_id)
         """)
         print("10")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             UPDATE targets
             SET location_id = (
@@ -135,7 +135,7 @@ def normalize_db():
         """)
 
         print("11")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             DROP COLUMN IF EXISTS target_country,
@@ -144,7 +144,7 @@ def normalize_db():
             DROP COLUMN IF EXISTS target_longitude
         """)
         print("12")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             CREATE TABLE IF NOT EXISTS industries (
                 industry_id SERIAL PRIMARY KEY,
@@ -152,7 +152,7 @@ def normalize_db():
             )
         """)
         print("13")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             INSERT INTO industries (target_industry)
             SELECT DISTINCT target_industry
@@ -160,13 +160,13 @@ def normalize_db():
         """)
 
         print("14")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             ADD COLUMN IF NOT EXISTS industry_id INTEGER REFERENCES industries(industry_id)
         """)
         print("15")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             UPDATE targets
             SET industry_id = (
@@ -176,13 +176,13 @@ def normalize_db():
             )
         """)
         print("16")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             DROP COLUMN IF EXISTS target_industry
         """)
         print("17")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             CREATE TABLE IF NOT EXISTS types (
                 type_id SERIAL PRIMARY KEY,
@@ -190,20 +190,20 @@ def normalize_db():
             )
         """)
         print("18")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             INSERT INTO types (target_type)
             SELECT DISTINCT target_type
             FROM targets
         """)
         print("19")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             ADD COLUMN IF NOT EXISTS type_id INTEGER REFERENCES types(type_id)
         """)
         print("20")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             UPDATE targets
             SET type_id = (
@@ -213,13 +213,13 @@ def normalize_db():
             )
         """)
         print("21")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             DROP COLUMN IF EXISTS target_type
         """)
         print("22")
-        target_conn.commit()
+        # target_conn.commit()
         target_cur.execute("""
             CREATE TABLE IF NOT EXISTS priorities (
                 priority_id SERIAL PRIMARY KEY,
@@ -227,20 +227,21 @@ def normalize_db():
             )
         """)
         print("23")
-        target_conn.commit()
         target_cur.execute("""
             INSERT INTO priorities (target_priority)
             SELECT DISTINCT CAST(target_priority AS INTEGER)
             FROM targets
+            WHERE target_priority ~ '^[0-9]+$'
         """)
+        # target_conn.commit()
         print("24")
-        target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             ADD COLUMN IF NOT EXISTS priority_id INTEGER REFERENCES priorities(priority_id)
         """)
+        # target_conn.commit()
         print("25")
-        target_conn.commit()
+
         target_cur.execute("""
             UPDATE targets
             SET priority_id = (
@@ -248,15 +249,16 @@ def normalize_db():
                 FROM priorities
                 WHERE priorities.target_priority = CAST(targets.target_priority AS INTEGER)
             )
+            WHERE targets.target_priority ~ '^[0-9]+$'
         """)
+        # target_conn.commit()
         print("26")
-        target_conn.commit()
         target_cur.execute("""
             ALTER TABLE IF EXISTS targets
             DROP COLUMN IF EXISTS target_priority
         """)
-
-        target_conn.commit()
+        # target_conn.commit()
+        print("27")
         print("Normalization was successful")
 
     except Exception as e:
